@@ -6,20 +6,19 @@ import {
   LogOut, Target, List, Trash2, ArrowUpDown
 } from 'lucide-react';
 
-// --- FIREBASE IMPORTS ---
+
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore, collection, doc, setDoc, onSnapshot, updateDoc, deleteDoc } from 'firebase/firestore';
 
-// --- FIREBASE SETUP ---
+
 let firebaseConfig;
 const isCanvasEnvironment = typeof __firebase_config !== 'undefined';
 
 if (isCanvasEnvironment) {
   firebaseConfig = JSON.parse(__firebase_config);
 } else {
-  // ⚠️ LOCAL LAPTOP USERS: PASTE YOUR FIREBASE CONFIG HERE ⚠️
-  // Go to console.firebase.google.com -> Project Settings -> General -> Web App
+
   firebaseConfig = {
     apiKey: "AIzaSyADNFloLHZDqN7k2lX43T5JIcsoGqM-vT4",
     authDomain: "smartque-6e002.firebaseapp.com",
@@ -30,7 +29,7 @@ if (isCanvasEnvironment) {
   };
 }
 
-// Initialize Firebase (safely)
+
 let app, auth, db;
 const isValidConfig = firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY";
 
@@ -40,12 +39,11 @@ if (isValidConfig) {
   db = getFirestore(app);
 }
 
-// Extract base appId: Firebase rules match the authorized base appId claim (e.g. c_0279c589319cf582)
-// This removes compiled path suffixes like "_src/App.jsx-260" and preserves the authenticated appId.
+
 const rawAppId = typeof __app_id !== 'undefined' ? String(__app_id) : 'smart-queue-local';
 const appId = rawAppId.split('_')[0].split('/')[0];
 
-// --- INITIAL DATA ---
+
 const INITIAL_SERVICES = [
   { id: 'S1', name: 'Account Opening', prefix: 'A', waitTime: 15 },
   { id: 'S2', name: 'Deposits', prefix: 'D', waitTime: 5 },
@@ -60,9 +58,7 @@ const INITIAL_COUNTERS = [
 ];
 
 
-// ==========================================
-// SUB-COMPONENTS
-// ==========================================
+
 
 const NavBar = ({ activeView, setActiveView, dbConnected, dbError }) => {
   const NavButton = ({ icon, label, view }) => (
@@ -83,7 +79,7 @@ const NavBar = ({ activeView, setActiveView, dbConnected, dbError }) => {
         <Activity className="text-blue-400" />
         <span>SmartQueue OS</span>
         
-        {/* DB Connection Status Indicator */}
+    
         <div className={`ml-4 flex items-center gap-1 text-xs px-2 py-1 rounded-full border ${
           dbError ? 'bg-red-500/10 text-red-400 border-red-500/20' 
           : dbConnected ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
@@ -124,7 +120,7 @@ const StatCard = ({ icon, label, value, trend, color }) => {
   );
 };
 
-// 1. AI Kiosk Simulator (Customer Entry)
+
 const KioskView = ({ services, dbConnected, generateToken }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [scannedToken, setScannedToken] = useState(null);
@@ -230,7 +226,7 @@ const KioskView = ({ services, dbConnected, generateToken }) => {
   );
 };
 
-// 2. Display Board View
+
 const DisplayBoardView = ({ tokens, counters }) => {
   const servingTokens = tokens.filter(t => t.status === 'serving');
   const waitingTokens = tokens.filter(t => t.status === 'waiting').slice(0, 5);
@@ -284,7 +280,6 @@ const DisplayBoardView = ({ tokens, counters }) => {
   );
 };
 
-// 3. Staff Dashboard View
 const StaffDashboardView = ({ counters, tokens, services, dbConnected, callNextToken, completeToken, skipToken }) => {
   const [staffName, setStaffName] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -343,10 +338,10 @@ const StaffDashboardView = ({ counters, tokens, services, dbConnected, callNextT
     );
   }
 
-  // FIXED: Acknowledge serving constraint during current active lookup to ensure exact token identification
+  
   const myCurrentToken = tokens.find(t => t.number === activeCounter.currentToken && t.status === 'serving');
   
-  // Filter waiting queue to ONLY show tokens this counter can handle
+
   const supportedWaitingTokens = tokens.filter(t => 
     t.status === 'waiting' && 
     activeCounter.services.includes(services.find(s => s.id === t.serviceId).prefix)
@@ -477,7 +472,7 @@ const StaffDashboardView = ({ counters, tokens, services, dbConnected, callNextT
   );
 };
 
-// 4. Admin Dashboard View
+
 const AdminDashboardView = ({ tokens, counters, services, onClearDatabase }) => {
   const totalServed = tokens.filter(t => t.status === 'completed').length;
   const totalWaiting = tokens.filter(t => t.status === 'waiting').length;
@@ -485,14 +480,14 @@ const AdminDashboardView = ({ tokens, counters, services, onClearDatabase }) => 
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   
-  // Custom Reset Dialog state (Iframe-safe banner)
+
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  // Dynamic Column Sorting State
+
   const [sortField, setSortField] = useState('timestamp');
   const [sortOrder, setSortOrder] = useState('desc');
 
-  // Calculate Officer Performance (Mock Targets: Daily = 20, Monthly = 400)
+ 
   const officerStats = tokens.reduce((acc, t) => {
     if (t.status === 'completed' && t.officerName) {
       if (!acc[t.officerName]) acc[t.officerName] = 0;
@@ -570,7 +565,7 @@ const AdminDashboardView = ({ tokens, counters, services, onClearDatabase }) => 
     document.body.removeChild(link);
   };
 
-  // Sort local tokens using the dynamic fields
+
   const sortedTokens = [...tokens].sort((a, b) => {
     let valA, valB;
     if (sortField === 'timestamp') {
@@ -599,7 +594,7 @@ const AdminDashboardView = ({ tokens, counters, services, onClearDatabase }) => 
     <div className="min-h-[85vh] bg-slate-50 p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         
-        {/* Top Header Controls */}
+
         <div className="flex justify-between items-end">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">System Analytics</h1>
@@ -620,7 +615,7 @@ const AdminDashboardView = ({ tokens, counters, services, onClearDatabase }) => 
           </div>
         </div>
 
-        {/* KPI Cards */}
+
         <div className="grid grid-cols-4 gap-6">
           <StatCard icon={<Users />} label="Total Customers" value={tokens.length} trend="Historical data" color="blue" />
           <StatCard icon={<Clock />} label="Currently Waiting" value={totalWaiting} trend="Live count" color="orange" />
@@ -628,10 +623,10 @@ const AdminDashboardView = ({ tokens, counters, services, onClearDatabase }) => 
           <StatCard icon={<BarChart3 />} label="Active Counters" value={counters.filter(c=>c.active).length} trend="Live count" color="purple" />
         </div>
 
-        {/* Officers and Logs Layout */}
+
         <div className="grid grid-cols-3 gap-6">
           
-          {/* Officer Targets & Performance Panel */}
+     
           <div className="col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
             <h3 className="font-bold text-slate-800 flex items-center gap-2">
               <Target size={18} className="text-blue-500"/> Officer Targets
@@ -792,25 +787,22 @@ const AdminDashboardView = ({ tokens, counters, services, onClearDatabase }) => 
 };
 
 
-// ==========================================
-// MAIN APP COMPONENT
-// ==========================================
 
 export default function App() {
   const [activeView, setActiveView] = useState('kiosk');
   const [services] = useState(INITIAL_SERVICES);
   
-  // Firebase State
+
   const [user, setUser] = useState(null);
   const [dbConnected, setDbConnected] = useState(false);
   const [configError, setConfigError] = useState(!isValidConfig);
   const [dbError, setDbError] = useState(null);
   
-  // App State
+
   const [tokens, setTokens] = useState([]);
   const [counters, setCounters] = useState([]);
 
-  // --- FIREBASE CONNECTION & LISTENERS ---
+
   useEffect(() => {
     if (!isValidConfig) return;
 
@@ -845,7 +837,7 @@ export default function App() {
     const tokensRef = collection(db, 'artifacts', appId, 'public', 'data', 'tokens');
     const countersRef = collection(db, 'artifacts', appId, 'public', 'data', 'counters');
 
-    // Listen to Tokens
+    
     const unsubTokens = onSnapshot(tokensRef, (snapshot) => {
       const fetchedTokens = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       // Sort by timestamp to keep queue order
@@ -857,11 +849,11 @@ export default function App() {
       setDbError("Permission Denied: Update Firestore Rules.");
     });
 
-    // Listen to Counters
+
     const unsubCounters = onSnapshot(countersRef, (snapshot) => {
       let fetchedCounters = snapshot.docs.map(doc => ({ id: Number(doc.id), ...doc.data() }));
       
-      // Auto-seed counters if database is totally empty
+
       if (fetchedCounters.length === 0) {
         INITIAL_COUNTERS.forEach(c => {
           setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'counters', c.id.toString()), c);
@@ -869,7 +861,7 @@ export default function App() {
         fetchedCounters = INITIAL_COUNTERS;
       }
       
-      // Sort counters by ID
+
       fetchedCounters.sort((a, b) => a.id - b.id);
       setCounters(fetchedCounters);
       setDbError(null);
@@ -884,7 +876,7 @@ export default function App() {
     };
   }, [user, dbConnected]);
 
-  // --- CORE DB LOGIC ---
+
 
   const generateToken = async (serviceId, imageData = null) => {
     if (!dbConnected) return null;
@@ -928,7 +920,7 @@ export default function App() {
     if (nextToken) {
       try {
         if (counter.currentToken) {
-          // FIXED: Locate ONLY the currently serving token to prevent updating historical duplicates
+          
           const oldToken = tokens.find(t => t.number === counter.currentToken && t.status === 'serving');
           if (oldToken) {
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tokens', oldToken.id), { 
@@ -958,7 +950,7 @@ export default function App() {
 
   const completeToken = async (tokenNumber, counterId) => {
     if (!dbConnected) return;
-    // FIXED: Locate ONLY the currently serving token to prevent updating historical duplicates
+   
     const token = tokens.find(t => t.number === tokenNumber && t.status === 'serving');
     if (token) {
       await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tokens', token.id), { 
@@ -971,7 +963,7 @@ export default function App() {
 
   const skipToken = async (tokenNumber, counterId) => {
     if (!dbConnected) return;
-    // FIXED: Locate ONLY the currently serving token to prevent updating historical duplicates
+   
     const token = tokens.find(t => t.number === tokenNumber && t.status === 'serving');
     if (token) {
       await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tokens', token.id), { 
@@ -983,15 +975,15 @@ export default function App() {
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'counters', counterId.toString()), { currentToken: null });
   };
 
-  // Custom DB wipeout & resync functionality
+ 
   const handleClearDatabase = async () => {
     if (!dbConnected) return;
     try {
-      // Loop over local state tokens and delete each from firestore
+
       for (const t of tokens) {
         await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tokens', t.id));
       }
-      // Reset counters current active token pointer
+    
       for (const c of counters) {
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'counters', c.id.toString()), {
           currentToken: null
